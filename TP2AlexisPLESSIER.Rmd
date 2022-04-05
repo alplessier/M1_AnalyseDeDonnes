@@ -1,0 +1,357 @@
+---
+title: "Rendu TP2 - Alexis PLESSIER"
+output: html_notebook
+---
+PARTIE I:
+
+
+Exercice 1 :
+
+Chargement des bibliothèques.
+
+```{r}
+library(factoextra)
+library(FactoMineR)
+library(gtsummary)
+library(markdown)
+library(readxl)
+```
+
+
+Exercice 2 :
+
+Chargement et premier traitement de la base de données :
+
+```{r}
+Deca20 <- read_excel("C:/Users/Alexis/Downloads/Deca20.xlsx")
+View(Deca20)
+dat20=Deca20[-seq(2,nrow(Deca20),by=3),];
+dat20=as.data.frame(dat20);
+colnames(dat20)[2];
+colnames(dat20)[2]="Athlete";
+```
+
+Exercice 3.1 :
+
+
+Création de deux dataframes différentes : Une pour les performance et l'autre pour les points attribués.
+
+```{r}
+dat20Point=dat20[seq(1,nrow(dat20),by=2),]
+dat20Perf=dat20[-seq(1,nrow(dat20),by=2),]
+dat20Point=as.data.frame(dat20Point)
+dat20Perf=as.data.frame(dat20Perf)
+View(dat20Point) ; View(dat20Perf)
+```
+
+
+Exercice 3.2 :
+
+Ajout de données manquantes pour les performances.
+
+```{r}
+dat20Perf[,"Athlete"]=dat20Point[,"Athlete"]
+dat20Perf[,"Pays"]=dat20Point[,"Pays"]
+dat20Perf[,"Total"]=dat20Point[,"Total"]
+dat20Perf$Rang=1 :nrow(dat20Perf)
+dat20Point$Rang=1 :nrow(dat20Perf)
+```
+
+Exercice 3.3 :
+
+Redéfini le nom des lignes des deux tableaux.
+
+```{r}
+dim(dat20Perf)
+dimnames(dat20Perf);rownames(dat20Perf)
+rownames(dat20Perf)=as.character(dat20Perf$Athlete)
+rownames(dat20Point)=as.character(dat20Perf$Athlete)
+```
+
+Exercice 4 :
+
+Suppression des lignes avec des données manquantes
+
+```{r}
+dat20Perf=na.omit(dat20Perf)
+dat20Point=na.omit(dat20Point)
+View(dat20Perf) ;View(dat20Point)
+```
+
+Exercice 5.1 :
+
+Supprime les 3 premières colonnes pour garder les valeurs utiles.
+
+```{r}
+dat20Perf0=dat20Perf
+dat20Perf=dat20Perf[,-(1 :4)]
+dat20Point0=dat20Point
+dat20Point=dat20Point[,-(1 :4)]
+```
+
+Exercice 5.2 :
+
+Affichage et modification des valeurs de type chr en valeurs numériques.
+
+```{r}
+str(dat20Point) ;str(dat20Perf)
+dat20Perf=apply( dat20Perf,2,as.numeric)
+dat20Point=apply(dat20Point,2,as.numeric)
+str(dat20Point) ;str(dat20Perf)
+```
+
+Nous avons des warning car les tableaux possèdent les valeur : DNF, DNS ou encore NM, qui ne peut pas être converti en valeur numérique. Ceci va nous donner des NA que nous devrons enlever pour la suite. Les valeurs de performance du 1500m sont également inconvertible. Il y a également une erreur de virgule pour la Performance à la perche du 17eme participant que l'on peut corriger.
+
+```{r}
+dat20Perf[17,8] = 4.6
+dat20Perfm1500=dat20Perf[,-10]
+dat20Perfm1500=na.omit(dat20Perfm1500)
+View(dat20Perfm1500)
+```
+
+Exercice 7 :
+
+Analyse des données du DataFrame dat20Perfm1500.
+
+```{r}
+apply(dat20Perfm1500,2,mean)
+apply(dat20Perfm1500,2,median)
+apply(dat20Perfm1500,2,IQR)
+apply(dat20Perfm1500,2,function(x)quantile(x,0.1))
+apply(dat20Perfm1500,2,function(x)quantile(x,0.9))
+```
+
+Caractèristique de dispersion : 
+
+```{r}
+apply(dat20Perfm1500,2,sd) #Ecart type
+CVx=apply(dat20Perfm1500,2,sd)/apply(dat20Perfm1500,2,mean)#Coefficient de Variation
+CVx
+```
+
+
+Intervalle entre le 1er et dernier quartile :
+
+```{r}
+apply(dat20Perfm1500,2,function(x)quantile(x,0.75)) - apply(dat20Perfm1500,2,function(x)quantile(x,0.25))
+```
+
+Ces résultats signifient, par exmeple, qu'entre les 25% d'athlètes les moins bons au 100m et les 25% meilleurs, il y a une différence de 0.42 secondes. Ou encore une différence de 60 centimètres au lancé de Poids ou bien 6.405 mètres au lancé de Javelot.
+
+
+ Intervalle entre le 1er et le dernier décile :
+ 
+```{r}
+apply(dat20Perfm1500,2,function(x)quantile(x,0.9)) - apply(dat20Perfm1500,2,function(x)quantile(x,0.1))
+```
+
+Ces résultats signifient, par exmeple, qu'entre les 10% d'athlètes les moins bons au saut en Longueur et les 10% meilleurs, il y a une différence de 0.696 mètre. Ou encore une différence de 0.946 seconde au 110m Haies ou bien 0.620 mètre au saut à la Perche.
+
+
+Graphique 100m :
+
+```{r}
+colnames(dat20Perf)[1]="100m"
+boxplot(dat20Perf[,"100m"],horizontal=T)
+title(main="performance au 100 m")
+hist(dat20Perf[,"100m"],prob=T)
+lines(density(dat20Perf[,"100m"]),col= "red")
+```
+
+Boite à moustache : Assymétrie à droite, une médiane vers 10.85s, un quart des coureurs ont un temps inférieur à environ 10.65s et supérieur à environ 11.05s.
+La moitié des coureurs ont un temps compris entre 10.65s et 11.05s.
+
+Histogramme : Distribution Non équilibrée, une grandee partie des athlètes ont un temps entre 10.6s et 11.2s.
+
+
+Graphique Saut en Longueur :
+
+```{r}
+colnames(dat20Perf)[2]="Long."
+boxplot(dat20Perf[,"Long."],horizontal=T)
+title(main="performance au saut en longueur")
+hist(dat20Perf[,"Long."],prob=T)
+lines(density(dat20Perf[,"Long."]),col= "red")
+```
+
+
+Boite à moustache : Assymétrie à gauche, une médiane vers 7.3 m, un quart des athlètes ont un saut inférieur à environ 7.2m et supérieur à environ 7.45m.
+La moitié des athlètes ont un saut non compris entre 7.2m et 7.45m.
+
+Histogramme : Distribution Non équilibrée (mais presque), une grandee partie des athlètes ont un saut entre 7.2m et 7.5m. On remarque également une valeur au dela de 8m qui pourrait faire penser à une erreur.
+
+
+Graphique Lancé de Poids :
+
+```{r}
+colnames(dat20Perf)[3]="Poids"
+boxplot(dat20Perf[,"Poids"],horizontal=T)
+title(main="performance au lancé de Poids")
+hist(dat20Perf[,"Poids"],prob=T)
+lines(density(dat20Perf[,"Poids"]),col= "red")
+```
+
+
+Boite à moustache : Assymétrie à gauche, une médiane vers 14.8m, un quart des athlètes ont un lancé inférieur à environ 14.4m et supérieur à environ 15.1m.
+La moitié des athlètes ont un lancé non compris entre 14.4m et 15.1m.
+
+Histogramme : Distribution Non équilibrée (mais presque), une grandee partie des athlètes ont un lancé entre 14.2m et 15.2m.
+
+
+
+
+PARTIE II : 
+
+
+Importation des données, transformation en DataFrame et gestion des noms de variables.
+
+```{r}
+datdon=scan("statlab.txt")
+datdon=matrix(datdon,ncol=19,byrow=T)
+datdon=data.frame(datdon)
+colnames(datdon)=c("sexenf","gsenf","tenf_n","penf_n", "tenf_10","penf_10",
+"gsmere","agem_n","pmere_n","consm_n","tmere",
+"pmere_10", "consm_10","agep_n", "consp_n","tpere","ppere_10",
+"revf_n","revf_10")
+```
+Pré-traitement :
+
+Conversion des Tailles en cm:
+```{r}
+datdon$tenf_n=2.54*datdon$tenf_n
+datdon$tenf_10=2.54*datdon$tenf_10
+datdon$tmere=2.54*datdon$tmere
+datdon$tpere=2.54*datdon$tpere
+```
+
+Conversion des Poids en Kg:
+```{r}
+datdon$penf_n=0.454*datdon$penf_n
+datdon$penf_10=0.454*datdon$penf_10
+datdon$pmere_n=0.454*datdon$pmere_n
+datdon$pmere_10=0.454*datdon$pmere_10
+datdon$ppere_10=0.454*datdon$ppere_10
+```
+
+Duplication du DataFrame au cas où:
+
+```{r}
+datdon2=datdon
+```
+
+Transformation de sexenf de variable quantitative en variable chr.
+
+```{r}
+datdon$sexenf[datdon$sexenf==1]="garcon"
+datdon$sexenf[datdon$sexenf==2]="fille"
+```
+
+Analyse des variables qualitatives :
+
+```{r}
+str(datdon)
+is.character(datdon$sexenf)
+is.factor(datdon$sexenf)
+summary(datdon$sexenf)
+```
+sexenf n'est pas reconnu comme variable quantitative mais simple chr.
+
+
+
+Transformation de sexenf en variable qualitative:
+
+```{r}
+datdon$sexenf=as.factor(datdon$sexenf)
+is.factor(datdon$sexenf)
+str (datdon$sexenf)
+summary(datdon$sexenf)
+```
+
+
+Modifcation de consm_n,consm_10,consp_10, gsenf et gsmere:
+
+```{r}
+Cscig=c("nonfum","1a2cig","3a10cig","10a20cig","+de20cig","inc")
+for(i in 1:length(Cscig)){
+datdon$consm_n[datdon$consm_n==i]=Cscig[i]
+datdon$consm_10[datdon$consm_10==i]=Cscig[i]
+datdon$consp_n[datdon$consp_n==i]=Cscig[i]
+}
+
+CSsan=c("O-","A-","B-","AB-","O+","A+","B+","AB+","inc")
+for(i in 1:length(CSsan)){
+  datdon$gsenf[datdon$gsenf==i]=CSsan[i]
+  datdon$gsmere[datdon$gsmere==i]=CSsan[i]
+}
+```
+
+
+Transformation des variables qualitatives chr en variables quantitatives:
+
+```{r}
+quali=datdon[,c(1,2,7,10,13,15)]
+for(i in c(1,2,7,10,13,15)){
+datdon[,i]=as.factor(datdon[,i])
+}
+summary(datdon[,c(1,2,7,10,13,15)])
+
+```
+
+
+Caractèristique de variables qualitatives:
+
+
+```{r}
+table(datdon$sexenf)
+summary(quali,maxsum=9)
+table(datdon$sexenf)/nrow(datdon)
+```
+
+
+Graphique (Circulaire):
+
+```{r}
+pie(table(datdon$sexenf))
+title(main="Genre de l’enfant")
+```
+
+Graphique (barplot):
+
+```{r}
+barplot(table(datdon$sexenf),col=c("purple", "yellow"))
+title(main="Genre de l’enfant")
+```
+
+
+Consommation de cigarette de la mère 10 ans plus tard :
+
+```{r}
+table(datdon$consm_10)
+table(datdon$consm_10)/nrow(datdon)
+
+pie(table(datdon$consm_10))
+title(main="Consommation de cigarette de la mère 10 ans après la naissance")
+
+barplot(table(datdon$consm_10),col=c("purple", "yellow","red","blue","green"))
+title(main="Consommation de cigarette de la mère 10 ans après la naissance")
+
+```
+On remarque qu'une grande partie des mères sont non-fumeuses 10 ans après la naissance de leur enfant (47.8%). On remarque également que dans les mères fumeuses, une plus grande partie fument beacoup plûtot que peu : 33,91% fument plus de 10 cigarettes par jour et donc 18,29% moins de 10 cigarettes par jour.
+
+
+
+Consommation de cigarette du père à la naissance :
+
+```{r}
+table( datdon$consp_n)
+table( datdon$consp_n)/nrow(datdon)
+
+pie(table(datdon$consp_n))
+title(main="Consommation de cigarette du père à la naissance")
+
+barplot(table( datdon$consp_n),col=c("purple", "yellow","red","blue","green"))
+title(main="Consommation de cigarette du père à la naissance")
+
+```
+
+On remarque qu'un tier des pères sont non-fumeurs 1à la naissance de leur enfant (31%). On remarque également que dans les pères fumeurs, une plus grande partie fument beacoup plûtot que peu : 56,52% fument plus de 10 cigarettes par jour et donc 12,48% moins de 10 cigarettes par jour.
